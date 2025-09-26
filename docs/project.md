@@ -6,8 +6,8 @@
   
 ## 환경 변수
 - toss payments 
-  - client : test_ck_BX7zk2yd8yJgeGqGRmMB3x9POLqK
-  - secret : test_sk_ALnQvDd2VJLZ6agypneO8Mj7X41m
+  - client : test_ck_xxxxxxxxxxxxxxxxx
+  - secret : test_sk_xxxxxxxxxxxxxxxxx
 
 
 ## 개발 스텍
@@ -86,3 +86,185 @@
 * **전체 공통 사항:**
     * **반응형 웹 디자인:** 모든 구성 요소는 데스크탑, 태블릿, 모바일 등 어떤 기기에서 접속하더라도 화면 크기에 맞게 최적화되어 표시되어야 합니다.
     * **사용자 친화적 인터페이스 (UI/UX):** 사용자가 원하는 정보를 쉽게 찾고, 회원가입부터 결제까지의 과정에서 불편함이 없도록 직관적이고 일관된 디자인을 적용합니다.
+
+---
+
+## 개발 진행 상황 및 디버깅 기록
+
+### 완료된 기능들
+
+#### 1. 기본 프로젝트 구조
+- ✅ Next.js 15.5.4 프로젝트 생성
+- ✅ Tailwind CSS 설정
+- ✅ TypeScript 설정
+- ✅ 기본 컴포넌트 구조 생성
+
+#### 2. 인증 시스템 (Supabase)
+- ✅ Supabase 클라이언트 설정 (`/src/lib/supabase.ts`)
+- ✅ 환경변수 설정 (`.env.local`)
+- ✅ 회원가입/로그인 페이지 구현
+- ✅ Google OAuth 연동
+- ✅ 사용자 프로필 관리 시스템
+
+#### 3. 결제 시스템 (Toss Payments)
+- ✅ Toss Payments SDK 연동 (`/src/lib/toss-payments.ts`)
+- ✅ 결제 페이지 구현 (`/src/app/payment/`)
+- ✅ 결제 성공/실패 페이지
+- ✅ 멤버십 플랜별 가격 설정
+
+#### 4. 데이터베이스 스키마
+- ✅ `users` 테이블: 사용자 프로필 및 구독 정보
+- ✅ `courses` 테이블: 강의 목록 및 메타데이터
+- ✅ RLS (Row Level Security) 정책 설정
+- ✅ 자동 사용자 프로필 생성 트리거
+
+#### 5. 페이지 구현
+- ✅ 홈페이지 (`/src/app/page.tsx`)
+- ✅ 대시보드 (`/src/app/dashboard/page.tsx`)
+- ✅ 멤버십 플랜 페이지 (`/src/app/pricing/page.tsx`)
+- ✅ 강의 목록 페이지 (`/src/app/courses/page.tsx`)
+- ✅ 커뮤니티 페이지 (`/src/app/community/page.tsx`)
+- ✅ FAQ 페이지 (`/src/app/faq/page.tsx`)
+
+#### 6. 공통 컴포넌트
+- ✅ 네비게이션 바 (`/src/components/Navbar.tsx`)
+- ✅ 푸터 (`/src/components/Footer.tsx`)
+- ✅ 클라이언트 전용 컴포넌트 래퍼 (`/src/components/ClientOnly.tsx`)
+
+### 해결된 주요 이슈들
+
+#### 1. React Hydration 오류
+**문제**: 서버와 클라이언트 간 렌더링 불일치로 인한 hydration 오류
+**해결방법**:
+- `Footer.tsx`에서 동적 날짜 대신 고정 연도 사용
+- `window` 객체 사용 시 `typeof window !== 'undefined'` 체크 추가
+- `ClientOnly` 컴포넌트로 클라이언트 전용 렌더링 처리
+- `next.config.js`에서 `serverExternalPackages` 설정
+
+#### 2. Supabase 환경변수 설정 오류
+**문제**: "Invalid API key" 오류 및 환경변수 로딩 실패
+**해결방법**:
+- `.env.local` 파일의 환경변수 이름 수정: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- 환경변수 키 형식 수정: `sb_publishable_` 접두사 제거하고 올바른 JWT 형식 사용
+- `src/lib/config.ts`에 디버깅 로그 추가
+- `src/lib/supabase.ts`에 에러 핸들링 및 더미 클라이언트 fallback 추가
+
+#### 3. 로그인 상태 반영 문제
+**문제**: 로그인 후 네비게이션 바에 사용자 상태가 반영되지 않음
+**해결방법**:
+- `Navbar.tsx`에서 세션 감지 로직 개선
+- 사용자 프로필이 없을 경우 자동 생성 로직 추가
+- `auth.onAuthStateChange` 이벤트 리스너 개선
+- 대시보드에서도 동일한 사용자 프로필 생성 로직 적용
+
+#### 4. 중복 계정 처리 개선
+**문제**: 이미 가입된 이메일로 회원가입 시도 시 적절한 안내 없음
+**해결방법**:
+- 회원가입 페이지에서 중복 이메일 에러 감지 및 사용자 친화적 메시지 표시
+- 3초 후 자동으로 로그인 페이지로 리다이렉트
+- "지금 로그인하기" 링크 제공
+- 로그인 페이지에서도 에러 메시지 개선
+
+#### 5. Next.js 설정 경고 해결
+**문제**: `next.config.js`에서 deprecated 옵션 사용으로 인한 경고
+**해결방법**:
+- `experimental.serverComponentsExternalPackages` → `serverExternalPackages`로 변경
+- `swcMinify` 옵션 제거 (Next.js 15에서 기본값)
+
+### 기술 스택 세부사항
+
+#### 프론트엔드
+- **Next.js 15.5.4**: React 프레임워크
+- **TypeScript**: 타입 안전성
+- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
+- **Framer Motion**: 애니메이션 라이브러리
+- **Lucide React**: 아이콘 라이브러리
+
+#### 백엔드 & 데이터베이스
+- **Supabase**: 
+  - PostgreSQL 데이터베이스
+  - 실시간 구독
+  - 인증 시스템 (이메일/비밀번호, Google OAuth)
+  - Row Level Security (RLS)
+
+#### 결제 시스템
+- **Toss Payments**: 
+  - 카드 결제
+  - 테스트 환경 설정
+  - 결제 성공/실패 처리
+
+### 환경변수 설정
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx (실제 JWT 토큰)
+
+# Toss Payments
+NEXT_PUBLIC_TOSS_CLIENT_KEY=test_cxxx
+TOSS_SECRET_KEY=test_skxxx
+
+### 데이터베이스 스키마
+
+#### users 테이블
+```sql
+CREATE TABLE public.users (
+  id uuid REFERENCES auth.users ON DELETE CASCADE NOT NULL PRIMARY KEY,
+  email text UNIQUE,
+  name text,
+  subscription_plan text,
+  subscription_status text,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+#### courses 테이블
+```sql
+CREATE TABLE public.courses (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text NOT NULL,
+  description text,
+  category text NOT NULL,
+  difficulty text NOT NULL CHECK (difficulty IN ('beginner', 'intermediate', 'advanced')),
+  instructor text NOT NULL,
+  thumbnail_url text,
+  duration integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+### 멤버십 플랜 구조
+- **Basic 플랜**: 월 29,000원 / 연 290,000원
+- **Pro 플랜**: 월 59,000원 / 연 590,000원 (가장 인기)
+- **Enterprise 플랜**: 월 99,000원 / 연 990,000원
+
+### 결제 플로우
+1. `/pricing` → 플랜 선택
+2. `/payment` → 결제 정보 확인
+3. Toss Payments → 실제 결제 진행
+4. `/payment/success` 또는 `/payment/fail` → 결과 페이지
+
+### 개발 명령어
+```bash
+# 개발 서버 실행
+npm run dev
+
+# 빌드
+npm run build
+
+# 프로덕션 실행
+npm start
+```
+
+### 디버깅 도구
+- 브라우저 콘솔에서 상세한 로그 확인 가능
+- Supabase 대시보드에서 실시간 데이터 모니터링
+- 결제 과정 전체에 대한 로깅 시스템 구축
+
+### 향후 개선 사항
+- [ ] 결제 완료 후 실제 구독 상태 업데이트 로직
+- [ ] 이메일 알림 시스템
+- [ ] 강의 진도 추적 시스템
+- [ ] 관리자 대시보드
+- [ ] 모바일 앱 개발
